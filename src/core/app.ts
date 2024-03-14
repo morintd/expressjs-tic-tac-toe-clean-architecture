@@ -3,7 +3,11 @@ import cookieParser from "cookie-parser";
 import express from "express";
 import { TicTacToeController } from "../tic-tac-toe/tic-tac-toe.controller";
 import { TicTacToeModule } from "../tic-tac-toe/tic-tac-toe.module";
-import { BoardService } from "../tic-tac-toe/board.service";
+import { Initialize } from "../tic-tac-toe/use-cases/initialize.use-case";
+import { InMemoryBoardRepository } from "../tic-tac-toe/adapters/in-memory-board.repository";
+import { Play } from "../tic-tac-toe/use-cases/play.use-case";
+import { JumpTo } from "../tic-tac-toe/use-cases/jump-to.use-case";
+import { GamePresenter } from "../tic-tac-toe/adapters/game.presenter";
 
 function createApp() {
   const app = express();
@@ -12,9 +16,15 @@ function createApp() {
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());
 
-  const service = new BoardService();
+  const repository = new InMemoryBoardRepository();
+  const initialize = new Initialize(repository);
+  const play = new Play(repository);
+  const jumpTo = new JumpTo(repository);
+  const presenter = new GamePresenter();
 
-  const module = new TicTacToeModule(new TicTacToeController(service));
+  const module = new TicTacToeModule(
+    new TicTacToeController(initialize, play, jumpTo, presenter)
+  );
 
   module.configure(app);
 
